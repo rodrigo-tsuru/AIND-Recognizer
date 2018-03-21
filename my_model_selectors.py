@@ -105,5 +105,22 @@ class SelectorCV(ModelSelector):
     def select(self):
         warnings.filterwarnings("ignore", category=DeprecationWarning)
 
-        # TODO implement model selection using CV
-        raise NotImplementedError
+        bestScore = float("-inf")
+        bestModel = None
+
+        #training = asl.build_training(features_ground) # Experiment here with different feature sets
+        #word = 'VEGETABLE' # Experiment here with different words
+        #word_sequences = training.get_word_sequences(word)
+        split_method = KFold(n_splits=2)
+        for cv_train_idx, cv_test_idx in split_method.split(self.sequences):
+            self.X, self.lengths = combine_sequences(cv_train_idx,self.sequences)
+            for num_components in range(self.min_n_components,self.max_n_components):
+                try:
+                    currModel = self.base_model(num_components)
+                    if currModel.score(self.X,self.lengths) > bestScore:
+                        bestModel = currModel
+                except:
+                    print("training failed for {} with {} states ...".format(self.this_word,num_components))
+            print("Train fold indices:{} Test fold indices:{}".format(cv_train_idx, cv_test_idx))  # view indices of the folds
+
+        return bestModel
